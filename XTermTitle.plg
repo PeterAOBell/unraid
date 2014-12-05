@@ -1,0 +1,125 @@
+<?xml version='1.0' standalone='yes'?>
+
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "XTermTitle">
+<!ENTITY author    "PeterB">
+<!ENTITY version   "2014.12.05">
+<!ENTITY pluginURL "">
+]>
+
+<PLUGIN  name="&name;"
+         author="&author;"
+         version="&version;"
+         pluginURL="&pluginURL;">
+
+<!--
+05-Dec-2014 - PAOB - First public release
+
+This isn't really a plugin, but the plugin system is the easiest 
+way to distribute/maintain.
+
+The purpose is to allow xterm window sessions (Telnet/SSH etc.)
+logged in to the unRAID server to display the machine name, 
+user name and current directory in the title bar/tab on the client.
+-->
+
+
+<FILE Name="/usr/local/emhttp/plugins/&name;/&name;.png" Type="base64">
+<INLINE>
+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
+YII=
+</INLINE>
+</FILE>
+
+
+<FILE Run="/bin/bash">
+<INLINE>
+echo "if [ \$?TERM ]; then	#paob" >> /etc/profile
+echo "  case \$TERM	#paob" >> /etc/profile
+echo "  in	#paob" >> /etc/profile
+echo "     xterm*)	#paob" >> /etc/profile
+echo "     PROMPT_COMMAND='echo -ne \"\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\"'	#paob" >> /etc/profile
+echo "     ;;	#paob" >> /etc/profile
+echo "     *)	#paob" >> /etc/profile
+echo "  esac	#paob" >> /etc/profile
+echo "fi	#paob" >> /etc/profile
+</INLINE>
+</FILE>
+
+
+<!--
+Create plugin README.md file
+-->
+<FILE Name="/usr/local/emhttp/plugins/&name;/README.md">
+<INLINE>
+**Xterm Window Title**
+
+A very simple plugin to add user@host and current directory to the title bar/tab of any xterm (Telnet/SSH) window which logs in to the unRAID server.
+</INLINE>
+</FILE>
+
+<!--
+The 'remove' script.
+-->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+sed '/#paob/d' /etc/profile > /etc/profile_new
+chmod 644 /etc/profile_new
+mv -f /etc/profile_new /etc/profile
+rm -r usr/local/emhttp/plugins/&name;
+</INLINE>
+</FILE>
+
+
+</PLUGIN>
