@@ -93,7 +93,7 @@ echo "     xterm*)	#paob" >> /etc/profile
 echo "     PROMPT_COMMAND='echo -ne \"\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\"'	#paob" >> /etc/profile
 echo "     ;;	#paob" >> /etc/profile
 echo "     screen) #paob" >> /etc/profile
-echo "     PROMPT_COMMAND='echo -ne \"\033P\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\033\\"' #paob" >> /etc/profile
+echo "     PROMPT_COMMAND='echo -ne \"\033P\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\033\"' #paob" >> /etc/profile
 echo "     ;; #paob" >> /etc/profile
 echo "     *)	#paob" >> /etc/profile
 echo "  esac	#paob" >> /etc/profile
