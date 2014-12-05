@@ -4,7 +4,7 @@
 <!ENTITY name      "XTermTitle">
 <!ENTITY author    "PeterB">
 <!ENTITY version   "2014.12.05">
-<!ENTITY pluginURL "">
+<!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/blob/master/XTermTitle.plg">
 ]>
 
 <PLUGIN  name="&name;"
