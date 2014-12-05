@@ -83,27 +83,6 @@ YII=
 </FILE>
 
 
-<!--
-<FILE Name="/tmp/&name;.sh" Run="/bin/bash" Mode="0770">
-<INLINE>
-<![CDATA[
-#!/bin/bash
-
-echo "if [ \$?TERM ]; then	#paob" >> /etc/profile
-echo "  case \$TERM	#paob" >> /etc/profile
-echo "  in	#paob" >> /etc/profile
-echo "     xterm*)	#paob" >> /etc/profile
-echo "     PROMPT_COMMAND='echo -ne \"\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\"'	#paob" >> /etc/profile
-echo "     ;;	#paob" >> /etc/profile
-echo "     *)	#paob" >> /etc/profile
-echo "  esac	#paob" >> /etc/profile
-echo "fi	#paob" >> /etc/profile
-
-]]>
-</INLINE>
-</FILE>
--->
-
 <FILE Run="/bin/bash">
 <INLINE>
 echo "if [ \$?TERM ]; then	#paob" >> /etc/profile
