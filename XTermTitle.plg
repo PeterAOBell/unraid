@@ -3,7 +3,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "XTermTitle">
 <!ENTITY author    "PeterB">
-<!ENTITY version   "2014.12.05">
+<!ENTITY version   "2014.12.06">
 <!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/XTermTitle.plg">
 ]>
 
@@ -14,6 +14,7 @@
 
 <!--
 05-Dec-2014 - PAOB - First public release
+06-Dec-2014 - PAOB - Add /root/.bashrc to ensure title works in su mode
 
 This isn't really a plugin, but the plugin system is the easiest 
 way to distribute/maintain.
@@ -99,6 +100,16 @@ echo "fi	#paob" >> /etc/profile
 
 
 <!--
+The /root/.bashrc file is necessary to ensure that title works in SU mode
+-->
+<FILE Name="/root/.bashrc" Mode="0644">
+<INLINE>
+source /etc/profile
+</INLINE>
+</FILE>
+
+
+<!--
 Create plugin README.md file
 -->
 <FILE Name="/usr/local/emhttp/plugins/&name;/README.md">
@@ -117,6 +128,7 @@ The 'remove' script.
 sed '/#paob/d' /etc/profile > /etc/profile_new
 chmod 644 /etc/profile_new
 mv -f /etc/profile_new /etc/profile
+rm -f /root/.bashrc
 rm -r usr/local/emhttp/plugins/&name;
 </INLINE>
 </FILE>
