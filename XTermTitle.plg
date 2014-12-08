@@ -3,7 +3,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "XTermTitle">
 <!ENTITY author    "PeterB">
-<!ENTITY version   "2014.12.06">
+<!ENTITY version   "2014.12.08">
 <!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/XTermTitle.plg">
 ]>
 
@@ -15,6 +15,8 @@
 <!--
 05-Dec-2014 - PAOB - First public release
 06-Dec-2014 - PAOB - Add /root/.bashrc to ensure title works in su mode
+08-Dev-2014 - PAOB - Do sed edit 'in place' using -i option
+                     Add title function for 'screen' mode
 
 This isn't really a plugin, but the plugin system is the easiest 
 way to distribute/maintain.
@@ -92,6 +94,9 @@ echo "  in	#paob" >> /etc/profile
 echo "     xterm*)	#paob" >> /etc/profile
 echo "     PROMPT_COMMAND='echo -ne \"\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\"'	#paob" >> /etc/profile
 echo "     ;;	#paob" >> /etc/profile
+echo "     screen)	#paob" >> /etc/profile
+echo "     PROMPT_COMMAND='echo -ne \"\033P\033]0;\${USER}@\${HOSTNAME}: \${PWD}\007\033\\\\\"'	#paob" >> /etc/profile
+echo "     ;;	#paob" >> /etc/profile
 echo "     *)	#paob" >> /etc/profile
 echo "  esac	#paob" >> /etc/profile
 echo "fi	#paob" >> /etc/profile
@@ -125,9 +130,7 @@ The 'remove' script.
 -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
-sed '/#paob/d' /etc/profile > /etc/profile_new
-chmod 644 /etc/profile_new
-mv -f /etc/profile_new /etc/profile
+sed -i '/#paob/d' /etc/profile
 rm -f /root/.bashrc
 rm -r usr/local/emhttp/plugins/&name;
 </INLINE>
