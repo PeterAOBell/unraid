@@ -27,6 +27,7 @@
 - First public release
 </CHANGES>
 
+<!--
 This isn't really a plugin, but the plugin system is the easiest 
 way to distribute/maintain.
 
