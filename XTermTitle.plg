@@ -3,7 +3,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "XTermTitle">
 <!ENTITY author    "PeterB">
-<!ENTITY version   "2014.12.08">
+<!ENTITY version   "2014.12.10">
 <!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/XTermTitle.plg">
 ]>
 
