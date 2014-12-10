@@ -12,11 +12,20 @@
          version="&version;"
          pluginURL="&pluginURL;">
 
-<!--
-05-Dec-2014 - PAOB - First public release
-06-Dec-2014 - PAOB - Add /root/.bashrc to ensure title works in su mode
-08-Dev-2014 - PAOB - Do sed edit 'in place' using -i option
-                     Add title function for 'screen' mode
+<CHANGES>
+###2014.12.10  PAOB
+- Add CHANGES section, no functional change
+
+###2014.12.08  PAOB
+- Do sed edit 'in place' using -i option
+- Add title function for 'screen' mode
+
+###2014.12.06  PAOB
+- Add /root/.bashrc to ensure title works in su mode
+
+###2014.12.05  PAOB
+- First public release
+</CHANGES>
 
 This isn't really a plugin, but the plugin system is the easiest 
 way to distribute/maintain.
