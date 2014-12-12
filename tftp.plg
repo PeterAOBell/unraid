@@ -1,0 +1,587 @@
+<?xml version='1.0' standalone='yes'?>
+
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "tftp">
+<!ENTITY author    "WW/piotrasd/PeterB">
+<!ENTITY version   "2014.12.12">
+<!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/tft.plg">
+]>
+
+<PLUGIN  name="&name;"
+         author="&author;"
+         version="&version;"
+         pluginURL="&pluginURL;">
+
+
+<CHANGES>
+###2014.12.12   PAOB
+- Remove 'install' script.  The concept of autostarting on installation
+                ... results in early start on a normal boot - before
+                ... disks are mounted..
+
+###2014.12.11   PAOB
+- Allow the -c option to be applied to in.tftp enabling file creation
+- Always install tftp-hpa package, remove option to install/remove
+- Always enable configuration settings, auto-restart daemon on Accept
+- Add 'remove' method anonymous script
+- Implement inline help, tidy/fix php
+
+###2014.12.08	PAOB
+- Change tftp_start to move RUNAS from the SUDO command to in.tftp -u option
+		... this allows startup as root and switch to another user
+
+###2014.12.07	PAOB
+- Make compliant with plugin manager in V6.0 beta12
+- Fix ip4 (won't run as user nobody)
+- Add sumcheck for package file
+- Make temporary clean up script an anonymous file
+
+###2014.12.07   piotrasd
+- change picon, fix for use only ipv4 and start on unraid6
+
+###2013.05.21	WW
+- first release
+</CHANGES>
+
+<!--
+This Plugin installs and controls TFTP-hpa for UnRaid.
+-->
+
+<!-- Clean up previous install -->
+<FILE Run="/bin/bash">
+<INLINE>
+<![CDATA[
+if test -d /usr/local/emhttp/plugins/tftp; then rm -fR /usr/local/emhttp/plugins/tftp; fi
+if test -f /etc/rc.d/rc.tftp/; then rm -f /etc/rc.d/rc.tftp; fi
+]]>
+</INLINE>
+</FILE>
+
+<!-- Fetch the package file -->
+<FILE Name="/boot/config/plugins/&name;/tftp-hpa-5.2-x86_64-1.txz" Run="upgradepkg --install-new">
+<URL>http://slackware.cs.utah.edu/pub/slackware/slackware64-14.1/slackware64/n/tftp-hpa-5.2-x86_64-1.txz</URL>
+<MD5>f46db54cfe4e2b1523b77d78f00eb75b</MD5>
+</FILE>
+
+<!-- Fetch various icon files -->
+<FILE Name="/boot/config/plugins/&name;/device_status.png">
+<URL>https://dl.dumptruck.goldenfrog.com/p/8l0_dLn6pm/device_status.png --no-check-certificate</URL>
+</FILE>
+<FILE Name="/boot/config/plugins/&name;/new_config.png">
+<URL>https://dl.dumptruck.goldenfrog.com/p/gQ_gRlIVrn/new_config.png --no-check-certificate</URL>
+</FILE>
+<FILE Name="/boot/config/plugins/&name;/&name;.png">
+<URL>http://i.imgur.com/DuPFj1t.png</URL>
+</FILE>
+
+<!-- Create TFTP config file -->
+<FILE Name="/boot/config/plugins/&name;/&name;.cfg">
+<INLINE>
+<![CDATA[
+# TFTP configuration:
+AUTOSTART="no"
+DATADIR="/usr/local/tftp"
+CREATEFILE="no"
+RUNAS="nobody"
+PLG_STORAGESIZE="yes"
+PLG_DATACHECK="yes"
+]]>
+</INLINE>
+</FILE>
+
+<FILE Name="/etc/rc.d/rc.&name;" Mode="0770">
+<INLINE>
+<![CDATA[
+#!/bin/sh
+# autostart|start|stop|restart|storagesize|datacheck|files|settings TFTP
+
+# read TFTP configuration
+source /boot/config/plugins/tftp/tftp.cfg
+PID=$(/sbin/pidof -o %PPID /usr/sbin/in.tftpd)
+
+tftp_autostart()
+{
+	# no-op if not enabled
+	if [ "${AUTOSTART}" != "yes" ]; then
+		return
+	fi
+	sleep 1
+	tftp_start
+}
+
+tftp_start()
+{
+	# no-op if already running
+	if [ "${PID}" != "" ]; then
+		return
+	fi
+
+	# if TFTP data directory isn't found, create it
+	if [[ "$DATADIR" != "" && ! -e "$DATADIR" ]]; then
+		mkdir -p "${DATADIR}" && chmod -fR 777 "${DATADIR}"
+	fi
+
+	# set up -c option
+	if [ "${CREATEFILE}" == "yes" ]; then
+		CREATEOPT=" -c "
+	else
+		CREATEOPT=" "
+	fi
+
+	echo -n "Starting TFTP... "
+	sleep 1
+	sudo /usr/sbin/in.tftpd -u "${RUNAS}" -l -s -4 ${CREATEOPT} "${DATADIR}" > /dev/null 2>&1
+	sleep 1
+	PID=$(/sbin/pidof -o %PPID /usr/sbin/in.tftpd)
+	if [ "${PID}" != "" ]; then
+		echo -e "[  OK  ]"
+	else
+		echo -e "[FAILED]\r"
+	fi
+	sleep 1
+}
+
+tftp_stop()
+{
+	# no-op if not running
+	if [ "${PID}" == "" ]; then
+		return
+	fi
+
+	echo -n "Stopping TFTP... "
+	killall in.tftpd
+	sleep 1
+	PID=$(/sbin/pidof -o %PPID /usr/sbin/in.tftpd)
+	if [ "${PID}" == "" ]; then
+		echo -e "[  OK  ]"
+	else
+		echo -e "[FAILED]\r"
+	fi
+	sleep 1
+}
+
+tftp_restart()
+{
+	tftp_stop
+	sleep 1
+	tftp_start
+}
+
+write_config()
+{
+	echo "# TFTP configuration:" > /boot/config/plugins/tftp/tftp.cfg
+	echo "AUTOSTART=\"$AUTOSTART\"" >> /boot/config/plugins/tftp/tftp.cfg
+	echo "DATADIR=\"$DATADIR\"" >> /boot/config/plugins/tftp/tftp.cfg
+	echo "CREATEFILE=\"$CREATEFILE\"" >> /boot/config/plugins/tftp/tftp.cfg
+	echo "RUNAS=\"$RUNAS\"" >> /boot/config/plugins/tftp/tftp.cfg
+	echo "PLG_STORAGESIZE=\"$PLG_STORAGESIZE\"" >> /boot/config/plugins/tftp/tftp.cfg
+	echo "PLG_DATACHECK=\"$PLG_DATACHECK\"" >> /boot/config/plugins/tftp/tftp.cfg
+}
+
+tftp_change_settings()
+{
+	AUTOSTART="${1}"
+
+	DATADIR="${2}"
+	if [ "$DATADIR" == "" ]; then
+		DATADIR="/usr/local/tftp"
+	fi
+	if [ ! -e "${DATADIR}" ]; then
+		mkdir -p "${DATADIR}"
+	fi
+
+	CREATEFILE="${6}"
+
+	if [ "${3}" != "${RUNAS}" ]; then
+		chown -R $3 "${DATADIR}"
+	fi
+	RUNAS="${3}"
+	# create OSCam user if necessary
+	if [[ $RUNAS != "nobody" && $RUNAS != "root" ]]; then
+		if ( ! grep -q ^$RUNAS /etc/passwd ); then
+	  		useradd -r -g users -d / -s /bin/false $RUNAS &> /dev/null
+	  		cp /etc/passwd /etc/shadow /boot/config
+		fi
+	fi
+
+	PLG_STORAGESIZE="${4}"
+	PLG_DATACHECK="${5}"
+
+	write_config
+
+	#if process is running, do a restart to implement new settings
+	if [ "${PID}" != "" ]; then
+		tftp_restart
+	fi
+}
+
+tftp_storagesize()
+{
+	if [ $1 ] && [ $2 ]; then
+		if [ -d $1 ]; then
+			INST=`du -sh $1 | cut -f1`
+		elif [ -f $1 ]; then
+			INST=`ls -lah $1 | awk '{ print $5}'`
+		fi
+
+		if [ -d $2 ]; then
+			DAT=`du -sh $2 | cut -f1`
+		elif [ -f $2 ]; then
+			DAT=`ls -lah $2 | awk '{ print $5}'`
+		fi
+
+		if [ $1 == $2 ]; then
+			echo "<p style="margin-left:10px\;">Storage memory usage: install + data directory: <b>$INST</b></p>"
+		else
+			echo "<p style="margin-left:10px\;">Storage memory usage: install directory: <b>$INST</b>, data directory: <b>$DAT</b></p>"
+		fi
+	elif [ $1 ]; then
+		if [ -d $1 ]; then
+			INST=`du -sh $1 | cut -f1`
+		elif [ -f $1 ]; then
+			INST=`ls -lah $1 | awk '{ print $5}'`
+		fi
+		echo "<p style="margin-left:10px\;">Storage memory usage: <b>$INST</b></p>"
+	fi
+}
+
+tftp_datacheck()
+{
+	array=( ramfs proc tempfs sysfs )
+	fs=$( stat -f -c '%T' $DATADIR )
+	for i in "${array[@]}"
+	do
+		if [ $i = $fs ]; then
+		    echo "<p style="color:red\;margin-left:10px\;margin-right:10px\;"><b>WARNING:</b> Your data directory is not persistent and WILL NOT survive a reboot. Please locate Data Directory on disk for persistency</p>"
+			break
+		elif [ $i = msdos ]; then
+			echo "<p style="color:red\;margin-left:10px\;margin-right:10px\;"><b>WARNING:</b> Your data directory is located on your flash drive. This will decrease your flash drives life span!</p>"
+			break
+		else
+			echo "<p style="color:green\;margin-left:10px\;margin-right:10px\;">Your data will persist after a reboot</p>"
+			break
+		fi
+	done
+}
+
+tftp_files()
+{
+    for fl in ${DATADIR}/* ; do
+		if [ -e $fl ]; then
+			file="`basename ${fl}`"
+			size="`du -sh ${fl} | cut -f1`"
+			echo "<tr><td>${file}</td><td style="text-align:right">${size}</td></tr>"
+		fi
+    done
+}
+
+case "$1" in
+	'autostart')
+		tftp_autostart
+	;;
+	'start')
+		tftp_start
+	;;
+	'stop')
+		tftp_stop
+	;;
+	'restart')
+		tftp_restart
+	;;
+	'storagesize')
+		tftp_storagesize "${2}" "${3}"
+	;;
+	'datacheck')
+		tftp_datacheck
+	;;
+	'files')
+		tftp_files
+	;;
+	'settings')
+		tftp_change_settings "${2}" "${3}" "${4}" "${5}" "${6}" "${7}"
+	;;
+	*)
+		echo "usage $0 autostart|start|stop|restart|storagesize|datacheck|files|settings"
+esac
+]]>
+</INLINE>
+</FILE>
+
+<FILE Name="/usr/local/emhttp/plugins/&name;/Tftp.page">
+<INLINE>
+<![CDATA[
+Menu="NetworkServices"
+Icon="tftp.png"
+Version="0.2"
+Author="Wojciech Walaszek/PAOB"
+Title="TFTP Server"
+---
+
+<?PHP
+$tftp_cfg = parse_ini_file( "/boot/config/plugins/tftp/tftp.cfg" );
+$tftp_pid = trim(shell_exec( "/sbin/pidof -o %PPID /usr/sbin/in.tftpd" ));
+$tftp_running = ( $tftp_pid != "" ) ? "yes" : "no";
+if ($tftp_cfg[PLG_STORAGESIZE]=="yes")
+	$tftp_datasize = shell_exec ( "/etc/rc.d/rc.tftp storagesize /usr/bin/tftp $tftp_cfg[DATADIR]" );
+if ($tftp_cfg[PLG_DATACHECK]=="yes")
+	$tftp_datacheck = shell_exec ( "/etc/rc.d/rc.tftp datacheck" );
+if ($tftp_running == "yes")
+	$tftp_version = trim(shell_exec( "tftp -V | cut -d',' -f1 | cut -d' ' -f2" ));
+$tftp_files = trim(shell_exec( "/etc/rc.d/rc.tftp files" ));
+
+?>
+
+<div style="width: 49%; float:left">
+	<div id="title">
+		<span class="left"><img src='/plugins/tftp/device_status.png' class='icon'>Status:
+			<?if ($tftp_running=="yes"):?>
+				<span class="green"><b>RUNNING</b></span></a></span></a><span style="font-size:12px;"> with version: <b><?=$tftp_version?></b></span>
+			<?else:?>
+				<span class="red"><b>STOPPED</b></span>
+			<?endif;?>
+		</span>
+	</div>
+	<div style="position:relative;float:left;width:50%;text-align:right; margin-bottom:24px">
+		<form name="tftp_start_stop" method="POST" action="/update.htm" target="progressFrame">
+			<?if ($tftp_running=="yes"):?>
+				<input type="hidden" name="cmd" value="/etc/rc.d/rc.tftp stop">
+				<input type="submit" name="runCmd" value="Stop">
+			<?else:?>
+				<input type="hidden" name="cmd" value="/etc/rc.d/rc.tftp start">
+				<input type="submit" name="runCmd" value="Start">
+			<?endif;?>
+		</form>
+	</div>
+	<div style="position:relative;float:left;width:50%;margin-bottom:24px">
+		<form name="tftp_restart" method="POST" action="/update.htm" target="progressFrame">
+			<?if ($tftp_running=="yes"):?>
+				<input type="hidden" name="cmd" value="/etc/rc.d/rc.tftp restart">
+				<input type="submit" name="runCmd" value="Restart">
+			<?endif;?>
+		</form>
+	</div>
+	<hr style="clear:both">
+	<? if ($tftp_cfg[PLG_STORAGESIZE]=="yes"): ?>
+		<?=$tftp_datasize?>
+	<? endif; ?>
+	<? if ($tftp_cfg[PLG_DATACHECK]=="yes"): ?>
+		<?=$tftp_datacheck?>
+	<? endif; ?>
+</div>
+<div style="width: 49%; float:right">
+	<div id="title">
+		<span class="left"><img src='/plugins/tftp/new_config.png' class='icon'>Configuration:</span>
+	</div>
+	<form name="tftp_settings" method="POST" action="/update.htm" target="progressFrame">
+		<input type="hidden" name="cmd" value="/etc/rc.d/rc.tftp settings">
+		<table class="settings">
+			<dl>
+				<dt>TFTP autostart:</dt>
+				<dd>
+					<input type="checkbox" name="autostart" <?=($tftp_cfg['AUTOSTART']=="yes")?"checked=\"checked\"":"";?> onChange="checkAUTOSTART(this.form);">
+					<input type="hidden" name="arg1" value="<?=$tftp_cfg['AUTOSTART'];?>">
+				</dd>
+			</dl>
+			<blockquote class='inline_help'>
+			<p>
+				<strong>TFTP autostart:</strong>
+				<br />Sets the server to be started whenever the plugin executes.
+			</p>
+			</blockquote>
+			<dl>
+				<dt>Data directory:</dt>
+				<dd><input type="text" name="arg2" maxlength="60" value="<?=$tftp_cfg['DATADIR'];?>"></dd>
+			</dl>
+			<blockquote class='inline_help'>
+			<p>
+				<strong>Data directory:</strong>
+				<br />Specifies the location of the filestore for tftp.
+			</p>
+			</blockquote>
+			<dl>
+				<dt>TFTP file creation allowed:</dt>
+				<dd>
+					<input type="checkbox" name="createfile" <?=($tftp_cfg['CREATEFILE']=="yes")?"checked=\"checked\"":"";?> onChange="checkCREATEFILE(this.form);">
+					<input type="hidden" name="arg6" value="<?=$tftp_cfg['CREATEFILE'];?>">
+				</dd>
+			</dl>
+			<blockquote class='inline_help'>
+			<p>
+				<strong>TFTP file creation allowed:</strong>
+				<br />Enables the client to save new files as well as fetch and amend existing files.
+			</p>
+			</blockquote>
+			<dl>
+				<dt>Run as:</dt>
+				<dd>
+					<select name="runas" size="1" onChange="checkUSER(this.form);">
+						<?=mk_option($tftp_cfg['RUNAS'], "nobody", "nobody");?>
+						<?=mk_option($tftp_cfg['RUNAS'], "root", "root");?>
+						<option value='other'<?=($tftp_cfg['RUNAS'] != "root" && $tftp_cfg['RUNAS'] != "nobody")?" selected=yes":"" ;?>>other</option>
+					</select>
+					<input type="hidden" name="arg3" style="width:auto" maxlength="40" value="<?=$tftp_cfg['RUNAS'];?>">
+				</dd>
+			</dl>
+			<blockquote class='inline_help'>
+			<p>
+				<strong>Run as:</strong>
+				<br />Specifies the user account under which the tftp daemon will run.
+			</p>
+			</blockquote>
+			<dl><dd>---</dd></dl>
+			<dl>
+				<dt>Show storage memory usage:</dt>
+				<dd>
+					<input type="checkbox" name="storagesize" <?=($tftp_cfg['PLG_STORAGESIZE']=="yes")?"checked=\"checked\"":"";?> onChange="checkSTORAGE(this.form);">
+					<input type="hidden" name="arg4" value="<?=$tftp_cfg['PLG_STORAGESIZE'];?>">
+				</dd>
+			</dl>
+			<blockquote class='inline_help'>
+			<p>
+				<strong>Show storage memory usage:</strong>
+				<br />Enables the display of storage space occupied by the filestore in the frame to the left.
+			</p>
+			</blockquote>
+			<dl>
+				<dt>Show data persistency information:</dt>
+				<dd>
+					<input type="checkbox" name="datacheck" <?=($tftp_cfg['PLG_DATACHECK']=="yes")?"checked=\"checked\"":"";?> onChange="checkDATA(this.form);">
+					<input type="hidden" name="arg5" value="<?=$tftp_cfg['PLG_DATACHECK'];?>">
+				</dd>
+			</dl>
+			<blockquote class='inline_help'>
+			<p>
+				<strong>Show data persistency information:</strong>
+				<br />Enables the display of the data persistency in the frame to the left.
+			</p>
+			</blockquote>
+		</table>
+		<div align="center">
+			<hr>
+			<input type="submit" name="runCmd" value="Apply" style="margin-bottom:8px">
+			<button type="button" style="margin-bottom:8px" onClick="done();">Done</button>
+		</div>
+	</form>
+<br />
+</div>
+<div style="width: 49%; float:left; margin-top:10px">
+	<div>
+		<input type="button" value="Show files in data directory" style="width:100%;height:36px;font-size:15px;margin-top:16px;margin-bottom:0px" onClick="if (this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display != '') { this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = '';	this.innerText = ''; this.value = 'Hide files in data directory'; } else { this.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0].style.display = 'none'; this.innerText = ''; this.value = 'Show files in data directory'; }">
+	</div>
+	<div>
+		<div style="display: none;">
+			<table class="share_status wide" style="margin-top:0px">
+				<tr>
+					<td>Filename:</td>
+					<td width=100px style="text-align:center">Size</td>
+				</tr>
+				<?=$tftp_files?>
+			</table>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+function checkAUTOSTART(form)
+{
+	(form.autostart.checked == true) ? form.arg1.value = "yes" : form.arg1.value = "no";
+}
+function checkCREATEFILE(form)
+{
+	(form.createfile.checked == true) ? form.arg6.value = "yes" : form.arg6.value = "no";
+}
+function checkUSER(form)
+{
+	if (form.runas.selectedIndex < 2 )
+	{
+		form.arg3.value = form.runas.options[form.runas.selectedIndex].value;
+		form.arg3.type = "hidden";
+	}
+	else
+	{
+		form.arg3.value = "<?=$tftp_cfg['RUNAS'];?>";
+		form.arg3.type = "text";
+	}
+}
+function checkSTORAGE(form)
+{
+	(form.storagesize.checked == true) ? form.arg4.value = "yes" : form.arg4.value = "no";
+}
+
+function checkDATA(form)
+{
+	(form.datacheck.checked == true) ? form.arg5.value = "yes" : form.arg5.value = "no";
+}
+checkAUTOSTART(document.tftp_settings);
+checkUSER(document.tftp_settings);
+checkCREATEFILE(document.tftp_settings);
+checkSTORAGE(document.tftp_settings);
+checkDATA(document.tftp_settings);
+</script>
+
+]]>
+</INLINE>
+</FILE>
+
+<FILE Name="/usr/local/emhttp/plugins/&name;/device_status.png">
+<LOCAL>/boot/config/plugins/&name;/device_status.png</LOCAL>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/&name;/new_config.png">
+<LOCAL>/boot/config/plugins/&name;/new_config.png</LOCAL>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/&name;/&name;.png">
+<LOCAL>/boot/config/plugins/&name;/&name;.png</LOCAL>
+</FILE>
+
+<!-- event handler -->
+<FILE Name="/usr/local/emhttp/plugins/&name;/event/disks_mounted" Mode="0770">
+<INLINE>
+<![CDATA[
+#!/bin/bash
+/etc/rc.d/rc.tftp autostart
+]]>
+</INLINE>
+</FILE>
+
+<!-- event handler -->
+<FILE Name="/usr/local/emhttp/plugins/&name;/event/unmounting_disks" Mode="0770">
+<INLINE>
+<![CDATA[
+#!/bin/bash
+/etc/rc.d/rc.tftp stop
+]]>
+</INLINE>
+</FILE>
+
+<!--
+Create plugin README.md file
+-->
+<FILE Name="/usr/local/emhttp/plugins/&name;/README.md">
+<INLINE>
+**TFTP Server**
+
+A simple plugin to install and configure the tftp-hpa server.
+</INLINE>
+</FILE>
+
+<!--
+The 'remove' script.
+-->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+# Stop tftp
+/etc/rc.d/rc.&name; stop
+
+# Remove the apcupsd package
+removepkg &name;-hpa
+
+# Clean up package remains.
+rm -f /etc/rc.d/rc.&name;
+
+# Remove all plugin files.
+rm -r usr/local/emhttp/plugins/&name;
+
+</INLINE>
+</FILE>
+
+</PLUGIN>
