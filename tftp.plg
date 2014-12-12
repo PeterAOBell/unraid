@@ -4,7 +4,7 @@
 <!ENTITY name      "tftp">
 <!ENTITY author    "WW/piotrasd/PeterB">
 <!ENTITY version   "2014.12.12">
-<!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/tft.plg">
+<!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/tftp.plg">
 ]>
 
 <PLUGIN  name="&name;"
