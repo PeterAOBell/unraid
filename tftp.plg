@@ -572,7 +572,7 @@ The 'remove' script.
 # Stop tftp
 /etc/rc.d/rc.&name; stop
 
-# Remove the apcupsd package
+# Remove the tftp-hpa package
 removepkg &name;-hpa
 
 # Clean up package remains.
