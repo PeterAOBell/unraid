@@ -3,7 +3,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "tftp">
 <!ENTITY author    "WW/piotrasd/PeterB">
-<!ENTITY version   "2014.12.12">
+<!ENTITY version   "2014.12.13">
 <!ENTITY pluginURL "https://github.com/PeterAOBell/unraid/raw/master/tftp.plg">
 ]>
 
@@ -14,6 +14,9 @@
 
 
 <CHANGES>
+###2014.12.13   PAOB
+- Correct comment, no functional change
+
 ###2014.12.12   PAOB
 - Remove 'install' script.  The concept of autostarting on installation
                 ... results in early start on a normal boot - before
@@ -572,7 +575,7 @@ The 'remove' script.
 # Stop tftp
 /etc/rc.d/rc.&name; stop
 
-# Remove the apcupsd package
+# Remove the tftp package
 removepkg &name;-hpa
 
 # Clean up package remains.
